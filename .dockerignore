@@ -1,0 +1,8 @@
+venv
+shared_volumes
+.git
+.idea
+.gitignore
+.dockerignore
+devops_dev
+.venv

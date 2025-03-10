@@ -3,7 +3,6 @@ from controller.task_controller import router
 from model.database import Base, engine
 from contextlib import asynccontextmanager
 
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     async with engine.begin() as conn:

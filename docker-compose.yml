@@ -11,6 +11,36 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./local_dev/setup_postgres.sql:/docker-entrypoint-initdb.d/setup_postgres.sql
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "admin"]
+      interval: 5s
+      retries: 5
+      timeout: 3s
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--list", "--bootstrap-server", "kafka:9092"]
+      interval: 10s
+      retries: 5
+      timeout: 5s
 
   app:
     build:
@@ -21,8 +51,30 @@ services:
       - "8000:8000"
     environment:
       DATABASE_URL: postgresql://admin:admin123@db:5432/admin
+      KAFKA_BROKER: kafka:9092
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    volumes:
+      - .:/app
+
+  kafka_consumer:
+    build: .
+    container_name: kafka_consumer
+    depends_on:
+      db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      KAFKA_BROKER: kafka:9092
+      DATABASE_URL: postgresql+asyncpg://admin:admin123@db:5432/admin
+      PYTHONPATH: /app
+    command: ["python", "service/kafka_consumer.py"]
+    volumes:
+      - .:/app
 
 volumes:
   postgres_data:

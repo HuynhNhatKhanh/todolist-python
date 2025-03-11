@@ -25,8 +25,8 @@ async def consume():
 
         async for msg in consumer:
             data = msg.value
+            db_session = await get_db().__anext__()  
             if data["event"] == "task_created":
-                db_session = await get_db().__anext__()  
                 await PostgresDBService.create_task(db_session, data["data"])
                 await db_session.commit() 
                 print(f"📥 Task saved: {data['data']}")

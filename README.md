@@ -24,9 +24,9 @@ cd todolist-python
 Create a `.env` file and configure database & Kafka settings:
 
 ```
-DATABASE_URL=postgresql+asyncpg://user:password@db:5432/todolist
-KAFKA_BROKER=kafka:9092
-TOPIC_NAME=test-topic
+POSTGRES_USER=admin
+POSTGRES_PASSWORD=admin123
+POSTGRES_DB=admin
 ```
 
 ### 3️⃣ Run with Docker
